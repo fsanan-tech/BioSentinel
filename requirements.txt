@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+httpx
+feedparser
+pydantic
+geopy
+SQLAlchemy
+aiosqlite
+apscheduler
+python-dotenv
+beautifulsoup4
+python-dateutil
+tenacity
+pytrends
+lxml

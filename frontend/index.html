@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BioSentinel — Biosecurity Intelligence Platform</title>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg-void:       #050810;
+  --bg-deep:       #080d1a;
+  --bg-panel:      #0b1224;
+  --bg-card:       #0f1832;
+  --bg-hover:      #162040;
+  --border-dim:    rgba(0,188,188,0.12);
+  --border-mid:    rgba(0,188,188,0.28);
+  --border-hot:    rgba(0,255,200,0.55);
+  --cyan:          #00bcbc;
+  --cyan-bright:   #00ffe8;
+  --text-primary:  #c8d8e8;
+  --text-dim:      #5a7090;
+  --text-muted:    #3a5070;
+  --risk-1: #4ade80;
+  --risk-2: #facc15;
+  --risk-3: #fb923c;
+  --risk-4: #f87171;
+  --risk-5: #dc2626;
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-ui: 'Rajdhani', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; overflow: hidden; background: var(--bg-void); }
+
+body {
+  display: grid;
+  grid-template-rows: 48px 1fr;
+  grid-template-columns: 320px 1fr 300px;
+  font-family: var(--font-ui);
+  color: var(--text-primary);
+}
+
+/* ── TOPBAR ─────────────────────────── */
+#topbar {
+  grid-column: 1 / -1;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border-mid);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 24px;
+  position: relative;
+  z-index: 1000;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  color: var(--cyan-bright);
+}
+
+.logo-icon {
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid var(--cyan);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  animation: pulse-ring 3s ease-in-out infinite;
+}
+
+.logo-icon::before {
+  content: '';
+  width: 8px; height: 8px;
+  background: var(--cyan);
+  border-radius: 50%;
+}
+
+@keyframes pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,188,188,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(0,188,188,0); }
+}
+
+.top-stats {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+}
+
+.top-stat {
+  padding: 0 16px;
+  border-right: 1px solid var(--border-dim);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.top-stat-val {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--cyan-bright);
+  line-height: 1;
+}
+
+.top-stat-lbl {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.top-status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.live-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: #4ade80;
+  border-radius: 50%;
+  margin-right: 6px;
+  animation: blink 1.4s ease-in-out infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+#system-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+
+/* ── LEFT PANEL ──────────────────────── */
+#left-panel {
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-dim);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--border-dim);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-title {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  font-weight: 600;
+}
+
+.panel-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.filter-row {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-dim);
+  display: flex;
+  gap: 4px;
+}
+
+.filter-btn {
+  flex: 1;
+  padding: 4px 0;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  color: var(--text-dim);
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.filter-btn.active, .filter-btn:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(0,188,188,0.06);
+}
+
+#assessment-list {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-mid) transparent;
+}
+
+.assessment-card {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-dim);
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.assessment-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--risk-color, #4ade80);
+}
+
+.assessment-card:hover {
+  background: var(--bg-hover);
+}
+
+.assessment-card.selected {
+  background: var(--bg-hover);
+  border-bottom-color: var(--border-mid);
+}
+
+.card-risk {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.risk-badge {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 2px;
+  color: #000;
+}
+
+.confidence-val {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-left: auto;
+}
+
+.card-disease {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-location {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.card-sources {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+}
+
+/* ── MAP ─────────────────────────────── */
+#map-container {
+  position: relative;
+  overflow: hidden;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  background: #030712 !important;
+}
+
+/* Override Leaflet for dark theme */
+.leaflet-tile { filter: invert(1) hue-rotate(195deg) brightness(0.7) contrast(1.1) saturate(0.5); }
+
+.map-overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.map-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-mid);
+  color: var(--cyan);
+  padding: 8px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.map-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-hot);
+}
+
+.crosshair-overlay {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 400;
+  opacity: 0.08;
+}
+
+/* ── LEAFLET CUSTOM MARKERS ──────────── */
+.bio-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marker-pulse {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marker-pulse::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid;
+  border-color: inherit;
+  animation: marker-ring 2s ease-out infinite;
+}
+
+@keyframes marker-ring {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+.marker-core {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* ── RIGHT PANEL ─────────────────────── */
+#right-panel {
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border-dim);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#detail-view {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-mid) transparent;
+  padding: 0;
+}
+
+.detail-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 20px;
+}
+
+.detail-empty-icon {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-dim);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  opacity: 0.4;
+}
+
+.detail-section {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.detail-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.detail-headline {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.detail-summary {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.confidence-bar-container {
+  margin-top: 10px;
+}
+
+.confidence-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.cb-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.cb-track {
+  flex: 1;
+  height: 4px;
+  background: var(--bg-void);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.cb-fill {
+  height: 100%;
+  background: var(--cyan);
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+
+.cb-val {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--cyan-bright);
+  width: 30px;
+  text-align: right;
+}
+
+.signal-item {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  line-height: 1.4;
+}
+
+.action-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-mid);
+  border-radius: 2px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.spread-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border-radius: 2px;
+  margin-top: 8px;
+}
+
+.wastewater-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(56,189,248,0.12);
+  border: 1px solid rgba(56,189,248,0.4);
+  color: #7dd3fc;
+  padding: 3px 8px;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  border-radius: 2px;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+}
+
+.card-wastewater {
+  font-size: 10px;
+  color: #7dd3fc;
+  margin-top: 4px;
+}
+
+.restricted-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(220,38,38,0.15);
+  border: 1px solid rgba(220,38,38,0.4);
+  color: #f87171;
+  padding: 3px 8px;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  border-radius: 2px;
+  margin-top: 8px;
+}
+
+/* ── INGEST STATUS ───────────────────── */
+#ingest-panel {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-dim);
+}
+
+.ingest-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.ingest-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ingest-source { color: var(--text-dim); flex: 1; }
+.ingest-count { color: var(--text-muted); }
+
+/* ── SCANLINES ───────────────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0,0,0,0.08) 3px,
+    rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── TOOLTIP ─────────────────────────── */
+.leaflet-popup-content-wrapper {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-mid) !important;
+  border-radius: 2px !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-ui) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.7) !important;
+}
+
+.leaflet-popup-tip { background: var(--bg-card) !important; }
+
+.popup-disease {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: var(--cyan-bright);
+}
+.popup-location { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
+.popup-conf { font-family: var(--font-mono); font-size: 11px; }
+
+/* ── LOADING ─────────────────────────── */
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-void);
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-family: var(--font-mono);
+}
+
+.loading-logo {
+  font-size: 22px;
+  letter-spacing: 0.3em;
+  color: var(--cyan-bright);
+}
+
+.loading-bar {
+  width: 200px;
+  height: 2px;
+  background: var(--bg-card);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.loading-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--cyan-bright));
+  border-radius: 1px;
+  animation: loading-sweep 1.5s ease-in-out infinite;
+}
+
+@keyframes loading-sweep {
+  0% { width: 0%; margin-left: 0; }
+  50% { width: 60%; }
+  100% { width: 0%; margin-left: 100%; }
+}
+
+.loading-msg {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+}
+
+#loading-screen.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loading-screen">
+  <div class="loading-logo">⬡ BIOSENTINEL</div>
+  <div class="loading-bar"><div class="loading-fill"></div></div>
+  <div class="loading-msg" id="loading-msg">INITIALIZING INGESTION PIPELINE...</div>
+</div>
+
+<!-- Topbar -->
+<header id="topbar">
+  <div class="logo">
+    <div class="logo-icon"></div>
+    BIOSENTINEL
+  </div>
+  <div class="top-stats">
+    <div class="top-stat">
+      <div class="top-stat-val" id="stat-signals">—</div>
+      <div class="top-stat-lbl">Signals Ingested</div>
+    </div>
+    <div class="top-stat">
+      <div class="top-stat-val" id="stat-assessments">—</div>
+      <div class="top-stat-lbl">Active Assessments</div>
+    </div>
+    <div class="top-stat">
+      <div class="top-stat-val" id="stat-high" style="color: var(--risk-4)">—</div>
+      <div class="top-stat-lbl">High/Critical</div>
+    </div>
+    <div class="top-stat">
+      <div class="top-stat-val" id="stat-sources">—</div>
+      <div class="top-stat-lbl">Sources Active</div>
+    </div>
+  </div>
+  <div class="top-status">
+    <span class="live-dot"></span>LIVE FEED
+  </div>
+  <div id="system-time">——:——:—— UTC</div>
+</header>
+
+<!-- Left Panel: Assessment List -->
+<aside id="left-panel">
+  <div class="panel-header">
+    <span class="panel-title">Intelligence Assessments</span>
+    <span class="panel-count" id="assessment-count">0 active</span>
+  </div>
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="filterRisk('all', this)">ALL</button>
+    <button class="filter-btn" onclick="filterRisk(3, this)" style="color:var(--risk-3)">MOD</button>
+    <button class="filter-btn" onclick="filterRisk(4, this)" style="color:var(--risk-4)">HIGH</button>
+    <button class="filter-btn" onclick="filterRisk(5, this)" style="color:var(--risk-5)">CRIT</button>
+  </div>
+  <div id="assessment-list"></div>
+</aside>
+
+<!-- Map -->
+<main id="map-container">
+  <div id="map"></div>
+  <div class="crosshair-overlay">
+    <svg width="120" height="120" viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="55" fill="none" stroke="rgba(0,188,188,0.3)" stroke-width="0.5"/>
+      <line x1="60" y1="0" x2="60" y2="120" stroke="rgba(0,188,188,0.3)" stroke-width="0.5"/>
+      <line x1="0" y1="60" x2="120" y2="60" stroke="rgba(0,188,188,0.3)" stroke-width="0.5"/>
+    </svg>
+  </div>
+  <div class="map-overlay">
+    <button class="map-btn" onclick="refreshData()">⟳ REFRESH</button>
+    <button class="map-btn" onclick="triggerIngest()">▶ INGEST</button>
+  </div>
+</main>
+
+<!-- Right Panel: Detail View -->
+<aside id="right-panel">
+  <div class="panel-header">
+    <span class="panel-title">Assessment Detail</span>
+  </div>
+  <div id="detail-view">
+    <div class="detail-empty">
+      <div class="detail-empty-icon">◎</div>
+      SELECT ASSESSMENT<br>TO VIEW INTELLIGENCE BRIEF
+    </div>
+  </div>
+  <div id="ingest-panel">
+    <div class="panel-title" style="margin-bottom:10px">Source Status</div>
+    <div id="source-status-list"></div>
+  </div>
+</aside>
+
+<script>
+// ── State ──────────────────────────────────────
+const state = {
+  assessments: [],
+  selectedId: null,
+  filterLevel: 'all',
+  markers: {},
+};
+
+// ── Risk config ────────────────────────────────
+const RISK = {
+  1: { label: 'MINIMAL',  color: '#4ade80' },
+  2: { label: 'LOW',      color: '#facc15' },
+  3: { label: 'MODERATE', color: '#fb923c' },
+  4: { label: 'HIGH',     color: '#f87171' },
+  5: { label: 'CRITICAL', color: '#dc2626' },
+};
+
+// ── Map init ───────────────────────────────────
+const map = L.map('map', {
+  center: [20, 10],
+  zoom: 3,
+  zoomControl: false,
+  attributionControl: false,
+});
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 18,
+}).addTo(map);
+
+L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+// ── Time ticker ────────────────────────────────
+function tickTime() {
+  const now = new Date();
+  document.getElementById('system-time').textContent =
+    now.toUTCString().split(' ')[4] + ' UTC';
+}
+setInterval(tickTime, 1000);
+tickTime();
+
+// ── Fetch helpers ──────────────────────────────
+const API = '';  // Same origin
+
+async function apiFetch(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+// ── Load dashboard stats ───────────────────────
+async function loadDashboard() {
+  try {
+    const d = await apiFetch('/api/dashboard');
+    document.getElementById('stat-signals').textContent = d.total_signals_ingested ?? 0;
+    document.getElementById('stat-assessments').textContent = d.total_assessments ?? 0;
+    document.getElementById('stat-high').textContent =
+      (d.high_risk_count ?? 0) + (d.critical_count ?? 0);
+    document.getElementById('stat-sources').textContent =
+      (d.sources_active ?? []).length;
+  } catch(e) {
+    console.warn('Dashboard load failed:', e);
+  }
+}
+
+// ── Load ingestion status ──────────────────────
+async function loadIngestStatus() {
+  try {
+    const d = await apiFetch('/api/ingest/status');
+    const el = document.getElementById('source-status-list');
+    el.innerHTML = (d.sources || []).map(s => {
+      const ok = s.status === 'success';
+      const dot_color = ok ? '#4ade80' : s.status === 'never_run' ? '#5a7090' : '#f87171';
+      return `<div class="ingest-row">
+        <div class="ingest-dot" style="background:${dot_color}"></div>
+        <span class="ingest-source">${s.source.toUpperCase()}</span>
+        <span class="ingest-count">${s.records_fetched ?? 0} rec</span>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+// ── Render assessment list ─────────────────────
+function renderList() {
+  const list = document.getElementById('assessment-list');
+  const filtered = state.assessments.filter(a => {
+    if (state.filterLevel === 'all') return true;
+    return a.risk_level >= state.filterLevel;
+  });
+
+  document.getElementById('assessment-count').textContent = filtered.length + ' active';
+
+  if (!filtered.length) {
+    list.innerHTML = `<div style="padding:24px 16px; text-align:center; font-size:11px;
+      letter-spacing:0.15em; color:var(--text-muted); text-transform:uppercase">
+      No assessments match filter</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(a => {
+    const r = RISK[a.risk_level] || RISK[1];
+    const conf = Math.round((a.confidence || 0) * 100);
+    const selected = a.assessment_id === state.selectedId ? 'selected' : '';
+    const isWastewater = (a.contributing_sources || [])
+      .some(s => s.source_id && s.source_id.startsWith('nwss'));
+    return `<div class="assessment-card ${selected}"
+      style="--risk-color:${r.color}"
+      onclick="selectAssessment('${a.assessment_id}')">
+      <div class="card-risk">
+        <span class="risk-badge" style="background:${r.color}">${r.label}</span>
+        ${isWastewater ? '<span style="font-size:12px" title="Wastewater Detection">💧</span>' : ''}
+        <span class="confidence-val">${conf}%</span>
+      </div>
+      <div class="card-disease">${escape(a.primary_disease || 'Unknown')}</div>
+      <div class="card-location">
+        📍 ${escape((a.primary_location && a.primary_location.place_name) || 'Unknown Location')}
+      </div>
+      ${isWastewater ? '<div class="card-wastewater">💧 WASTEWATER CONFIRMED</div>' : ''}
+      <div class="card-sources">${(a.source_count || 0)} SRC · ${
+        formatDate(a.latest_signal)
+      }</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Update map markers ─────────────────────────
+function updateMapMarkers() {
+  // Remove old markers
+  Object.values(state.markers).forEach(m => map.removeLayer(m));
+  state.markers = {};
+
+  state.assessments.forEach(a => {
+    const loc = a.primary_location;
+    if (!loc || !loc.latitude || !loc.longitude) return;
+
+    const r = RISK[a.risk_level] || RISK[1];
+    const conf = Math.round((a.confidence || 0) * 100);
+    const isWW = (a.contributing_sources || [])
+      .some(s => s.source_id && s.source_id.startsWith('nwss'));
+
+    // Wastewater markers get a 💧 overlay
+    const markerHtml = isWW
+      ? `<div style="position:relative;display:inline-block">
+           <div class="marker-pulse" style="border-color:${r.color}; width:${12 + a.risk_level*3}px; height:${12 + a.risk_level*3}px">
+             <div class="marker-core" style="background:${r.color}"></div>
+           </div>
+           <span style="position:absolute;top:-8px;right:-10px;font-size:11px">💧</span>
+         </div>`
+      : `<div class="marker-pulse" style="border-color:${r.color}; width:${12 + a.risk_level*3}px; height:${12 + a.risk_level*3}px">
+           <div class="marker-core" style="background:${r.color}"></div>
+         </div>`;
+
+    const icon = L.divIcon({
+      className: '',
+      html: markerHtml,
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+    });
+
+    const marker = L.marker([loc.latitude, loc.longitude], { icon })
+      .bindPopup(`<div class="popup-disease">${isWW ? '💧 ' : ''}${escape(a.primary_disease || 'Unknown')}</div>
+        <div class="popup-location">📍 ${escape(loc.place_name || '')}</div>
+        <div class="popup-conf">
+          <span style="color:${r.color}">${r.label}</span>
+          · Confidence: <strong>${conf}%</strong>
+          · Sources: ${a.source_count}
+          ${isWW ? '<br><span style="color:#7dd3fc;font-size:10px">💧 Wastewater Environmental Detection</span>' : ''}
+        </div>`)
+      .addTo(map);
+
+    marker.on('click', () => selectAssessment(a.assessment_id));
+    state.markers[a.assessment_id] = marker;
+  });
+}
+
+// ── Select assessment ─────────────────────────
+function selectAssessment(id) {
+  state.selectedId = id;
+  const a = state.assessments.find(x => x.assessment_id === id);
+  renderList();
+  renderDetail(a);
+
+  // Fly to location
+  if (a && a.primary_location && a.primary_location.latitude) {
+    map.flyTo([a.primary_location.latitude, a.primary_location.longitude], 5, {
+      duration: 1.2,
+    });
+    const m = state.markers[id];
+    if (m) m.openPopup();
+  }
+}
+
+// ── Render detail panel ────────────────────────
+function renderDetail(a) {
+  const el = document.getElementById('detail-view');
+  if (!a) {
+    el.innerHTML = `<div class="detail-empty">
+      <div class="detail-empty-icon">◎</div>
+      SELECT ASSESSMENT<br>TO VIEW INTELLIGENCE BRIEF
+    </div>`;
+    return;
+  }
+
+  const r = RISK[a.risk_level] || RISK[1];
+  const conf = a.confidence || 0;
+  const bd = a.confidence_breakdown || {};
+
+  const spreadColors = { LOW: '#4ade80', MODERATE: '#fb923c', HIGH: '#f87171' };
+  const spreadColor = spreadColors[a.spread_risk_14d] || '#4ade80';
+
+  const isWastewater = (a.contributing_sources || [])
+    .some(s => s.source_id && s.source_id.startsWith('nwss'));
+
+  el.innerHTML = `
+    <div class="detail-section">
+      <div class="detail-label">Assessment Header</div>
+      <div class="detail-headline">${escape(a.headline || '')}</div>
+      ${isWastewater
+        ? `<div class="wastewater-badge">💧 WASTEWATER ENVIRONMENTAL DETECTION</div>` : ''}
+      ${a.restricted_data_incorporated
+        ? `<div class="restricted-badge">🔒 RESTRICTED DATA INCORPORATED</div>` : ''}
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">Intelligence Summary</div>
+      <div class="detail-summary">${escape(a.summary || '')}</div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">Confidence Breakdown</div>
+      <div class="confidence-bar-container">
+        ${renderBar('Source Credibility', bd.source_credibility)}
+        ${renderBar('Source Agreement', bd.source_agreement)}
+        ${renderBar('HCP Bonus', bd.high_consequence_bonus)}
+        ${renderBar('Pandemic Keywords', bd.pandemic_keyword_bonus)}
+        ${renderBar('Case Data', bd.case_data_bonus)}
+        ${bd.restricted_data_uplift
+          ? renderBar('Restricted Uplift', bd.restricted_data_uplift, true) : ''}
+        <div class="confidence-bar-row" style="margin-top:8px">
+          <span class="cb-label" style="color:var(--text-primary); font-weight:600">FINAL CONFIDENCE</span>
+          <div class="cb-track">
+            <div class="cb-fill" style="width:${Math.round(conf*100)}%; background:${r.color}"></div>
+          </div>
+          <span class="cb-val" style="color:${r.color}">${Math.round(conf*100)}%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">Key Signals</div>
+      ${(a.key_signals || []).map(s => `<div class="signal-item">${escape(s)}</div>`).join('')}
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">Recommended Action</div>
+      <div class="action-box">${escape(a.recommended_action || '')}</div>
+      <div class="spread-badge" style="background:${spreadColor}20; color:${spreadColor}; border:1px solid ${spreadColor}50">
+        14-DAY SPREAD RISK: ${a.spread_risk_14d || '—'}
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">Metadata</div>
+      <div class="signal-item">Assessment ID: ${a.assessment_id?.substring(0, 12)}...</div>
+      <div class="signal-item">Sources: ${(a.contributing_sources || []).map(s => s.source_id.toUpperCase()).join(', ')}</div>
+      <div class="signal-item">Signal window: ${formatDate(a.earliest_signal)} → ${formatDate(a.latest_signal)}</div>
+      <div class="signal-item">Events fused: ${(a.event_ids || []).length}</div>
+    </div>
+  `;
+}
+
+function renderBar(label, value, isRestricted = false) {
+  const pct = Math.round((value || 0) * 100);
+  const color = isRestricted ? '#f87171' : 'var(--cyan)';
+  return `<div class="confidence-bar-row">
+    <span class="cb-label">${label}</span>
+    <div class="cb-track">
+      <div class="cb-fill" style="width:${pct}%; background:${color}"></div>
+    </div>
+    <span class="cb-val">${pct}%</span>
+  </div>`;
+}
+
+// ── Filter ────────────────────────────────────
+function filterRisk(level, btn) {
+  state.filterLevel = level;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+// ── Load assessments ──────────────────────────
+async function loadAssessments() {
+  try {
+    const d = await apiFetch('/api/assessments?limit=200');
+    state.assessments = d.assessments || [];
+    renderList();
+    updateMapMarkers();
+  } catch(e) {
+    console.warn('Assessments load failed:', e);
+  }
+}
+
+// ── Trigger ingest ────────────────────────────
+async function triggerIngest() {
+  try {
+    await fetch('/api/ingest/run', { method: 'POST' });
+    document.querySelector('.loading-msg').textContent = 'INGESTION TRIGGERED...';
+    setTimeout(() => refreshData(), 3000);
+  } catch(e) {}
+}
+
+// ── Full refresh ──────────────────────────────
+async function refreshData() {
+  await Promise.all([loadDashboard(), loadAssessments(), loadIngestStatus()]);
+}
+
+// ── Init ──────────────────────────────────────
+function escape(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  try {
+    return new Date(d).toISOString().substring(0,16).replace('T',' ') + 'Z';
+  } catch { return '—'; }
+}
+
+async function init() {
+  const msgs = [
+    'INITIALIZING INGESTION PIPELINE...',
+    'CONNECTING TO OPEN-SOURCE FEEDS...',
+    'LOADING FUSION ENGINE...',
+    'CALIBRATING RISK MODELS...',
+  ];
+  let i = 0;
+  const ticker = setInterval(() => {
+    document.getElementById('loading-msg').textContent = msgs[++i % msgs.length];
+  }, 600);
+
+  try {
+    await refreshData();
+  } catch(e) {
+    console.error('Init error:', e);
+  }
+
+  clearInterval(ticker);
+  document.getElementById('loading-screen').classList.add('hidden');
+
+  // Auto-refresh every 2 minutes
+  setInterval(refreshData, 120_000);
+}
+
+init();
+</script>
+</body>
+</html>
