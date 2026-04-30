@@ -56,6 +56,10 @@ from backend.ingestion.social_ingesters import (
     MastodonOSINTIngester,
     WikipediaEditSpikeIngester,
 )
+from backend.ingestion.community_ingesters import (
+    RedditJSONIngester,
+    LemmyCommunityIngester,
+)
 
 log = logging.getLogger(__name__)
 
@@ -213,8 +217,10 @@ def build_all_ingesters():
 
         # ── TIER 3: Behavioral / Social OSINT ────────────────────────
         GoogleTrendsIngester(),         # Symptom search spikes (7-10d lead time)
-        RedditOSINTIngester(),          # Disease posts from key subreddits
-        MastodonOSINTIngester(),        # Mastodon health professional signal (open API)
+        RedditOSINTIngester(),          # Reddit via OAuth (needs credentials)
+        RedditJSONIngester(),           # Reddit via public JSON API (no auth needed)
+        LemmyCommunityIngester(),       # Lemmy federated communities (open API)
+        MastodonOSINTIngester(),        # Mastodon health professional signal
         WikipediaEditSpikeIngester(),   # Disease article edit frequency spikes
 
         # ── TIER 4: Open OSINT ───────────────────────────────────────
