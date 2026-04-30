@@ -544,6 +544,48 @@ body {
   margin-top: 4px;
 }
 
+.wastewater-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(56,189,248,0.12);
+  border: 1px solid rgba(56,189,248,0.4);
+  color: #7dd3fc;
+  padding: 3px 8px;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  border-radius: 2px;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+}
+
+.anomaly-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(168,85,247,0.12);
+  border: 1px solid rgba(168,85,247,0.5);
+  color: #d8b4fe;
+  padding: 3px 8px;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  border-radius: 2px;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+}
+
+.card-anomaly {
+  font-size: 10px;
+  color: #d8b4fe;
+  margin-top: 4px;
+}
+
+.card-wastewater {
+  font-size: 10px;
+  color: #7dd3fc;
+  margin-top: 4px;
+}
+
 .restricted-badge {
   display: inline-flex;
   align-items: center;
@@ -866,11 +908,16 @@ function renderList() {
     const selected = a.assessment_id === state.selectedId ? 'selected' : '';
     const isWastewater = (a.contributing_sources || [])
       .some(s => s.source_id && s.source_id.startsWith('nwss'));
+    const isAnomaly = (a.headline || '').includes('ANOMALY') ||
+      (a.headline || '').includes('σ above');
+    const anomalyMatch = (a.headline || '').match(/([\d.]+)σ/);
+    const zScore = anomalyMatch ? anomalyMatch[1] : null;
     return `<div class="assessment-card ${selected}"
       style="--risk-color:${r.color}"
       onclick="selectAssessment('${a.assessment_id}')">
       <div class="card-risk">
         <span class="risk-badge" style="background:${r.color}">${r.label}</span>
+        ${isAnomaly ? '<span style="font-size:12px" title="Statistical Anomaly">📊</span>' : ''}
         ${isWastewater ? '<span style="font-size:12px" title="Wastewater Detection">💧</span>' : ''}
         <span class="confidence-val">${conf}%</span>
       </div>
@@ -878,7 +925,8 @@ function renderList() {
       <div class="card-location">
         📍 ${escape((a.primary_location && a.primary_location.place_name) || 'Unknown Location')}
       </div>
-      ${isWastewater ? '<div class="card-wastewater">💧 WASTEWATER CONFIRMED</div>' : ''}
+      ${isAnomaly ? `<div class="card-anomaly">📊 STAT ANOMALY${zScore ? ' · ' + zScore + 'σ' : ''}</div>` : ''}
+      ${isWastewater && !isAnomaly ? '<div class="card-wastewater">💧 WASTEWATER CONFIRMED</div>' : ''}
       <div class="card-sources">${(a.source_count || 0)} SRC · ${
         formatDate(a.latest_signal)
       }</div>
@@ -900,9 +948,17 @@ function updateMapMarkers() {
     const conf = Math.round((a.confidence || 0) * 100);
     const isWW = (a.contributing_sources || [])
       .some(s => s.source_id && s.source_id.startsWith('nwss'));
+    const isAnom = (a.headline || '').includes('ANOMALY') ||
+      (a.headline || '').includes('σ above');
 
-    // Wastewater markers get a 💧 overlay
-    const markerHtml = isWW
+    const markerHtml = isAnom
+      ? `<div style="position:relative;display:inline-block">
+           <div class="marker-pulse" style="border-color:${r.color}; border-style:dashed; width:${12 + a.risk_level*3}px; height:${12 + a.risk_level*3}px">
+             <div class="marker-core" style="background:${r.color}"></div>
+           </div>
+           <span style="position:absolute;top:-8px;right:-10px;font-size:11px">📊</span>
+         </div>`
+      : isWW
       ? `<div style="position:relative;display:inline-block">
            <div class="marker-pulse" style="border-color:${r.color}; width:${12 + a.risk_level*3}px; height:${12 + a.risk_level*3}px">
              <div class="marker-core" style="background:${r.color}"></div>
@@ -973,11 +1029,17 @@ function renderDetail(a) {
 
   const isWastewater = (a.contributing_sources || [])
     .some(s => s.source_id && s.source_id.startsWith('nwss'));
+  const isAnomaly = (a.headline || '').includes('ANOMALY') ||
+    (a.headline || '').includes('σ above');
+  const anomalyMatch = (a.headline || '').match(/([\d.]+)σ/);
+  const zScore = anomalyMatch ? parseFloat(anomalyMatch[1]) : null;
 
   el.innerHTML = `
     <div class="detail-section">
       <div class="detail-label">Assessment Header</div>
       <div class="detail-headline">${escape(a.headline || '')}</div>
+      ${isAnomaly
+        ? `<div class="anomaly-badge">📊 STATISTICAL ANOMALY DETECTED${zScore ? ' · Z-SCORE: ' + zScore.toFixed(2) + 'σ' : ''}</div>` : ''}
       ${isWastewater
         ? `<div class="wastewater-badge">💧 WASTEWATER ENVIRONMENTAL DETECTION</div>` : ''}
       ${a.restricted_data_incorporated

@@ -97,6 +97,8 @@ async def init_db(db_path: str = "data/biosentinel.db"):
     _engine = create_async_engine(_db_url(db_path), echo=False)
     _async_session = async_sessionmaker(_engine, expire_on_commit=False)
     async with _engine.begin() as conn:
+        # Import anomaly tables so they get created too
+        from backend.analysis.anomaly_detector import SignalBaselineRecord, AnomalyLogRecord  # noqa
         await conn.run_sync(Base.metadata.create_all)
     log.info(f"Database initialized at {db_path}")
 
