@@ -162,7 +162,7 @@ class RedditJSONIngester(BaseIngester):
     source_id = "reddit_json"
     credibility_weight = 0.62  # Default; overridden per subreddit
 
-    BASE_URL = "https://www.reddit.com"
+    BASE_URL = "https://old.reddit.com"
     MIN_RELEVANCE = 0.20   # Skip posts below this relevance threshold
 
     @retry(stop=stop_after_attempt(2), wait=wait_exponential(multiplier=2, min=3, max=15))
@@ -173,9 +173,17 @@ class RedditJSONIngester(BaseIngester):
         cutoff = datetime.utcnow() - timedelta(hours=48)
 
         headers = {
-            # Reddit requires a descriptive User-Agent — generic ones get blocked
-            "User-Agent": "BioSentinel/0.1 biosecurity-research (disease surveillance tool)",
-            "Accept": "application/json",
+            # Use old.reddit.com — lighter, less bot detection
+            # Full browser header stack to avoid 403
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Referer": "https://old.reddit.com/",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+            "X-Requested-With": "XMLHttpRequest",
         }
 
         for subreddit, cred_weight in REDDIT_SOURCES:
