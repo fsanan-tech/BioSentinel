@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 class WHODonIngester(BaseIngester):
     source_id = "who_don"
-    credibility_weight = SOURCES["who_don"]["credibility_weight"]
+    credibility_weight = 0.95
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     async def fetch_raw(self) -> List[RawSignal]:
@@ -65,7 +65,7 @@ class WHODonIngester(BaseIngester):
 
 class WHONewsIngester(BaseIngester):
     source_id = "who_news"
-    credibility_weight = SOURCES["who_news"]["credibility_weight"]
+    credibility_weight = 0.90
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     async def fetch_raw(self) -> List[RawSignal]:

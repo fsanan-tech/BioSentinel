@@ -115,3 +115,11 @@ PANDEMIC_KEYWORDS = {
     "exponential", "unusual cluster", "unexplained deaths",
     "laboratory confirmed", "emerging", "re-emerging",
 }
+
+# Legacy source keys - kept for backward compatibility with old ingester files
+# These ingesters are imported but not actively used in build_all_ingesters()
+SOURCES["promed"] = {"enabled": False, "credibility_weight": 0.90}
+SOURCES["who_don"] = {"enabled": False, "credibility_weight": 0.95}
+SOURCES["who_news"] = {"enabled": False, "credibility_weight": 0.90}
+SOURCES["cdc_outbreaks"] = {"enabled": False, "credibility_weight": 0.88}
+SOURCES["reliefweb"] = {"enabled": False, "credibility_weight": 0.80}
