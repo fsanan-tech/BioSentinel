@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 
 class PromedIngester(BaseIngester):
     source_id = "promed"
-    credibility_weight = SOURCES["promed"]["credibility_weight"]
+    credibility_weight = 0.90
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     async def fetch_raw(self) -> List[RawSignal]:
