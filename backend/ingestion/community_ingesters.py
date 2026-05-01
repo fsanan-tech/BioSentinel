@@ -53,60 +53,189 @@ log = logging.getLogger(__name__)
 # Tuned to match the signal profile that preceded COVID coverage
 # ─────────────────────────────────────────────────────────────
 DISEASE_KEYWORDS = {
-    # Novel/emerging signals — highest value
-    "novel", "unknown", "mystery illness", "mystery disease",
-    "unidentified", "unusual cluster", "unexplained", "unprecedented",
-    "new virus", "new pathogen", "emerging", "emerging disease",
-    "atypical pneumonia", "unusual pneumonia",
+    # NOVEL / UNKNOWN SIGNALS (highest biosurveillance value)
+    "novel", "unknown", "mystery illness", "mystery disease", "mystery virus",
+    "unidentified", "unidentified pathogen", "unusual cluster", "unexplained",
+    "unprecedented", "new virus", "new pathogen", "emerging", "emerging disease",
+    "atypical pneumonia", "unusual pneumonia", "severe pneumonia",
+    "unknown respiratory", "unknown fever", "unknown hemorrhagic",
+    "disease x", "pathogen x", "novel agent",
 
-    # Specific pathogens
+    # HIGH-CONSEQUENCE PATHOGENS
     "ebola", "marburg", "mpox", "monkeypox", "nipah", "hendra",
-    "h5n1", "h5n6", "h7n9", "avian flu", "bird flu", "avian influenza",
-    "sars", "mers", "coronavirus", "novel coronavirus",
-    "dengue", "zika", "chikungunya", "rift valley",
-    "lassa", "cholera", "plague", "anthrax", "tularemia",
-    "hemorrhagic fever", "viral hemorrhagic", "vhf",
+    "h5n1", "h5n2", "h5n6", "h5n8", "h7n9", "h9n2", "h3n8",
+    "avian flu", "bird flu", "avian influenza", "highly pathogenic avian",
+    "hpai", "lpai",
+    "sars", "mers", "mers-cov", "coronavirus",
+    "dengue", "dengue hemorrhagic", "severe dengue",
+    "zika", "chikungunya", "rift valley fever",
+    "lassa", "lassa fever", "crimean-congo", "cchf",
+    "cholera", "plague", "bubonic", "pneumonic plague",
+    "anthrax", "tularemia", "brucellosis",
+    "yellow fever", "west nile", "japanese encephalitis",
+    "hantavirus", "candida auris", "drug-resistant fungal",
 
-    # Outbreak language
-    "outbreak", "epidemic", "pandemic", "cluster of cases",
-    "community spread", "human-to-human", "sustained transmission",
-    "quarantine", "mass casualty", "mass illness",
-    "hospital overwhelmed", "icu surge", "pneumonia outbreak",
-    "pneumonia cluster", "respiratory illness cluster",
+    # OUTBREAK LANGUAGE
+    "outbreak", "epidemic", "pandemic",
+    "cluster of cases", "cluster of deaths",
+    "community spread", "community transmission",
+    "human-to-human", "sustained transmission", "sustained spread",
+    "quarantine", "mass quarantine", "isolation ward",
+    "mass casualty", "mass illness", "mass hospitalization",
+    "hospital overwhelmed", "hospitals full", "icu surge", "icu overwhelmed",
+    "health emergency", "public health emergency",
+    "pneumonia outbreak", "pneumonia cluster",
+    "respiratory illness cluster", "respiratory outbreak",
+    "fever cluster", "hemorrhagic cluster",
 
-    # Geographic + pathogen combos that matter historically
-    "wuhan", "hubei",  # Keep for analog pattern detection
-    "congo hemorrhagic", "west africa outbreak",
-    "disinfecting market", "hospital footage",  # Early COVID Reddit pattern
+    # SYMPTOM CLUSTER SIGNALS
+    "unexplained deaths", "sudden deaths", "sudden illness",
+    "people dropping dead", "mass death",
+    "doctors dying", "nurses dying", "healthcare workers sick",
+    "children dying", "young healthy people dying",
+    "bleeding from", "hemorrhagic symptoms", "internal bleeding",
+    "organ failure", "multi-organ", "cytokine storm",
+    "rapid onset", "rapid deterioration", "sudden onset",
 
-    # Animal reservoir signals
-    "spillover", "zoonotic", "animal die-off", "mass die-off",
-    "bird deaths", "poultry cull", "bat virus",
+    # GEOGRAPHIC BIOSURVEILLANCE ANCHORS
+    # East/Southeast Asia
+    "wuhan", "hubei", "guangdong", "yunnan",
+    "beijing pneumonia", "guangzhou outbreak",
+    "hong kong outbreak", "taiwan outbreak",
+    "jakarta outbreak", "java illness",
+    "manila outbreak", "philippine outbreak",
+    "bangkok outbreak", "thailand virus",
+    "vietnam outbreak", "hanoi illness",
+    "malaysia outbreak", "singapore outbreak",
+    "myanmar outbreak", "cambodia outbreak",
+    "korea outbreak", "japan outbreak",
+
+    # South Asia
+    "india outbreak", "delhi outbreak", "mumbai outbreak",
+    "kerala outbreak", "bangladesh outbreak",
+    "pakistan outbreak", "karachi illness",
+    "nepal outbreak", "sri lanka outbreak",
+
+    # Middle East
+    "saudi arabia outbreak", "mecca illness", "hajj disease",
+    "iran outbreak", "iraq outbreak",
+    "turkey outbreak",
+
+    # Africa
+    "congo outbreak", "drc outbreak", "kinshasa illness",
+    "west africa outbreak", "east africa outbreak",
+    "nigeria outbreak", "lagos illness",
+    "guinea outbreak", "sierra leone outbreak", "liberia outbreak",
+    "kenya outbreak", "nairobi illness", "uganda outbreak",
+    "tanzania outbreak", "ethiopia outbreak",
+    "sudan outbreak", "cameroon outbreak",
+    "madagascar outbreak",
+
+    # Latin America
+    "brazil outbreak", "mexico outbreak", "colombia outbreak",
+    "peru outbreak", "venezuela outbreak", "haiti outbreak",
+    "ecuador outbreak", "bolivia outbreak",
+
+    # Eastern Europe
+    "ukraine outbreak", "russia outbreak", "kazakhstan outbreak",
+
+    # AGRICULTURAL / ANIMAL RESERVOIR SIGNALS
+    "spillover", "zoonotic", "zoonosis", "cross-species",
+    "animal die-off", "mass die-off", "mass animal death",
+    "bird deaths", "bird die-off", "dead birds", "dead poultry",
+    "poultry cull", "poultry killed", "chicken deaths", "duck deaths",
+    "livestock dying", "livestock disease", "cattle disease", "pig disease",
+    "swine disease", "bat virus", "bat colony",
+    "wildlife disease", "wild animal deaths",
+    "farm workers sick", "farm workers hospitalized",
+    "veterinarian warning", "animal health emergency",
+    "seal deaths", "marine mammal die-off", "fish kill",
+
+    # HEALTHCARE SYSTEM STRESS SIGNALS
+    "hospitals overwhelmed", "no beds available", "running out of oxygen",
+    "running out of medicine", "drug shortage outbreak",
+    "health workers infected", "medical staff sick",
+    "patients turned away", "overflow patients",
+    "field hospital", "emergency hospital built",
+    "body bags", "morgue overflow",
+
+    # MILITARY / BIOSECURITY SIGNALS
+    "troops sick", "soldiers ill", "military illness",
+    "base outbreak", "military base disease",
+    "biological incident", "suspected biological",
+    "bioterrorism", "bioweapon", "biological attack",
+
+    # TRAVEL / IMPORTATION SIGNALS
+    "returning traveler sick", "travel-related illness", "imported case",
+    "airport screening", "border health check",
+    "cruise ship illness", "cruise ship outbreak",
+    "flight quarantine", "plane quarantine",
+
+    # ENVIRONMENTAL SIGNALS
+    "wastewater detection", "sewage pathogen", "water contamination outbreak",
+    "food poisoning outbreak", "mass food poisoning",
+    "e. coli outbreak", "salmonella outbreak", "listeria outbreak",
+    "contaminated water", "water supply illness",
+
+    # SOCIAL/BEHAVIORAL EARLY WARNING PATTERNS (COVID-type)
+    "disinfecting market", "hospital footage", "doctors overwhelmed",
+    "pharmacies empty", "masks sold out", "oxygen sold out",
+    "people dying at home", "government hiding outbreak",
+    "covering up disease", "censoring doctors", "whistleblower doctor",
 }
 
-# Subreddits with their credibility weights
-# Higher = more expert community, lower = more noise
+# 28 subreddits across disease, geographic, agricultural, and travel categories
 REDDIT_SOURCES = [
-    ("epidemiology",       0.78),  # Expert community, peer review mindset
-    ("medicine",           0.72),  # Clinical professionals
-    ("publichealth",       0.72),  # Public health professionals
-    ("china",              0.60),  # Key for Asia-origin signals (COVID precedent)
-    ("worldnews",          0.52),  # High volume, needs keyword filter
-    ("coronavirus",        0.62),  # Active outbreak community
-    ("biology",            0.68),  # Academic biology discussions
-    ("emergencymedicine",  0.70),  # Frontline clinical signals
+    # Core disease surveillance
+    ("epidemiology",        0.78),
+    ("medicine",            0.72),
+    ("publichealth",        0.72),
+    ("emergencymedicine",   0.70),
+    ("nursing",             0.68),
+    ("globalhealth",        0.72),
+    ("biology",             0.68),
+    ("virology",            0.74),
+    ("microbiology",        0.72),
+    ("coronavirus",         0.62),
+    # Geographic — highest-risk outbreak zones
+    ("china",               0.65),
+    ("india",               0.58),
+    ("indonesia",           0.55),
+    ("philippines",         0.55),
+    ("vietnam",             0.55),
+    ("thailand",            0.55),
+    ("malaysia",            0.55),
+    ("nigeria",             0.55),
+    ("pakistan",            0.55),
+    ("bangladesh",          0.55),
+    ("brazil",              0.55),
+    ("africa",              0.58),
+    # Agricultural / zoonotic signals
+    ("veterinary",          0.68),
+    ("poultry",             0.60),
+    ("farming",             0.55),
+    ("wildlifebiology",     0.65),
+    # Broader signal nets
+    ("worldnews",           0.52),
+    ("travel",              0.50),
 ]
 
-# Lemmy instances and communities to monitor
+# Lemmy communities — expanded to 12
 LEMMY_SOURCES = [
-    ("lemmy.world", "epidemiology",  0.72),
-    ("lemmy.world", "medicine",      0.70),
-    ("lemmy.world", "science",       0.62),
-    ("lemmy.world", "worldnews",     0.52),
-    ("lemmy.world", "health",        0.65),
-    ("lemmy.ml",    "science",       0.62),
-    ("lemmy.ml",    "worldnews",     0.52),
+    ("lemmy.world", "medicine",     0.70),
+    ("lemmy.world", "science",      0.62),
+    ("lemmy.world", "worldnews",    0.52),
+    ("lemmy.world", "health",       0.65),
+    ("lemmy.world", "biology",      0.68),
+    ("lemmy.world", "environment",  0.55),
+    ("lemmy.ml",    "science",      0.62),
+    ("lemmy.ml",    "worldnews",    0.52),
+    ("lemmy.ml",    "biology",      0.65),
+    ("lemmy.ml",    "health",       0.65),
+    ("lemmy.blahaj.zone", "science", 0.58),
+    ("sh.itjust.works",   "worldnews", 0.50),
 ]
+
 
 
 def _strip_html(text: str) -> str:
