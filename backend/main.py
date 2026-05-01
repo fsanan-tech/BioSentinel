@@ -15,6 +15,7 @@ from fastapi.responses import FileResponse
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from backend.ingestion.multi_ingester import build_all_ingesters
+from backend.ingestion.regional_ingesters import build_regional_ingesters
 from backend.ingestion.restricted_interface import (
     RestrictedSignalSubmission, validate_restricted_submission,
     accept_restricted_signal, get_active_restricted_signals,
@@ -23,6 +24,8 @@ from backend.analysis.fusion_engine import fuse_events
 from backend.analysis.anomaly_detector import (
     record_daily_signals, detect_anomalies, get_anomaly_stats,
 )
+from backend.analysis.intelligence_brief import enrich_assessments_with_briefs
+from backend.alerts.notifier import process_alerts
 from backend.database.db import (
     init_db, upsert_raw_signal, save_processed_event,
     upsert_assessment, get_recent_assessments, get_recent_events,
@@ -56,7 +59,7 @@ frontend_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "fronten
 if os.path.exists(frontend_dir):
     app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
-INGESTERS = build_all_ingesters()
+INGESTERS = build_all_ingesters() + build_regional_ingesters()
 
 
 async def run_ingestion_cycle():
@@ -88,6 +91,14 @@ async def run_ingestion_cycle():
 
         # Standard fusion assessments
         assessments = fuse_events(all_events, restricted_signals)
+
+        # LLM intelligence briefs for HIGH/CRITICAL assessments
+        anthropic_key = os.getenv("ANTHROPIC_API_KEY", "")
+        if anthropic_key:
+            assessments = await enrich_assessments_with_briefs(
+                assessments, anthropic_key
+            )
+
         for assessment in assessments:
             await upsert_assessment(assessment.model_dump(mode="json"))
         log.info(f"Generated {len(assessments)} fusion assessments")
@@ -101,6 +112,11 @@ async def run_ingestion_cycle():
             await upsert_assessment(assessment.model_dump(mode="json"))
         if anomaly_assessments:
             log.info(f"⚠ {len(anomaly_assessments)} STATISTICAL ANOMALIES DETECTED")
+
+        # Send alerts for HIGH/CRITICAL
+        alerts_sent = process_alerts(assessments, anomaly_assessments)
+        if alerts_sent:
+            log.info(f"📧 {alerts_sent} alert(s) sent")
     else:
         log.info("No new events this cycle")
         await record_daily_signals([])

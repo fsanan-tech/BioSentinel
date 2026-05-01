@@ -559,6 +559,35 @@ body {
   font-family: var(--font-mono);
 }
 
+.intel-brief {
+  background: rgba(250,204,21,0.07);
+  border: 1px solid rgba(250,204,21,0.35);
+  border-radius: 3px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #fef3c7;
+  margin-bottom: 8px;
+}
+
+.intel-brief-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #facc15;
+  font-weight: 700;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-intel {
+  font-size: 10px;
+  color: #facc15;
+  margin-top: 4px;
+}
+
 .anomaly-badge {
   display: inline-flex;
   align-items: center;
@@ -912,6 +941,7 @@ function renderList() {
       (a.headline || '').includes('σ above');
     const anomalyMatch = (a.headline || '').match(/([\d.]+)σ/);
     const zScore = anomalyMatch ? anomalyMatch[1] : null;
+    const hasBrief = (a.key_signals || []).some(s => s.startsWith('📋 INTELLIGENCE BRIEF:'));
     return `<div class="assessment-card ${selected}"
       style="--risk-color:${r.color}"
       onclick="selectAssessment('${a.assessment_id}')">
@@ -919,6 +949,7 @@ function renderList() {
         <span class="risk-badge" style="background:${r.color}">${r.label}</span>
         ${isAnomaly ? '<span style="font-size:12px" title="Statistical Anomaly">📊</span>' : ''}
         ${isWastewater ? '<span style="font-size:12px" title="Wastewater Detection">💧</span>' : ''}
+        ${hasBrief ? '<span style="font-size:12px" title="AI Intelligence Brief">📋</span>' : ''}
         <span class="confidence-val">${conf}%</span>
       </div>
       <div class="card-disease">${escape(a.primary_disease || 'Unknown')}</div>
@@ -927,6 +958,7 @@ function renderList() {
       </div>
       ${isAnomaly ? `<div class="card-anomaly">📊 STAT ANOMALY${zScore ? ' · ' + zScore + 'σ' : ''}</div>` : ''}
       ${isWastewater && !isAnomaly ? '<div class="card-wastewater">💧 WASTEWATER CONFIRMED</div>' : ''}
+      ${hasBrief ? '<div class="card-intel">📋 AI INTEL BRIEF AVAILABLE</div>' : ''}
       <div class="card-sources">${(a.source_count || 0)} SRC · ${
         formatDate(a.latest_signal)
       }</div>
@@ -1034,6 +1066,13 @@ function renderDetail(a) {
   const anomalyMatch = (a.headline || '').match(/([\d.]+)σ/);
   const zScore = anomalyMatch ? parseFloat(anomalyMatch[1]) : null;
 
+  // Extract intelligence brief from key_signals
+  const briefSignal = (a.key_signals || []).find(s => s.startsWith('📋 INTELLIGENCE BRIEF:'));
+  const intelBrief = briefSignal
+    ? briefSignal.replace('📋 INTELLIGENCE BRIEF:', '').trim()
+    : null;
+  const otherSignals = (a.key_signals || []).filter(s => !s.startsWith('📋 INTELLIGENCE BRIEF:'));
+
   el.innerHTML = `
     <div class="detail-section">
       <div class="detail-label">Assessment Header</div>
@@ -1045,6 +1084,12 @@ function renderDetail(a) {
       ${a.restricted_data_incorporated
         ? `<div class="restricted-badge">🔒 RESTRICTED DATA INCORPORATED</div>` : ''}
     </div>
+
+    ${intelBrief ? `
+    <div class="detail-section">
+      <div class="intel-brief-label">📋 AI Intelligence Brief</div>
+      <div class="intel-brief">${escape(intelBrief)}</div>
+    </div>` : ''}
 
     <div class="detail-section">
       <div class="detail-label">Intelligence Summary</div>
@@ -1073,7 +1118,7 @@ function renderDetail(a) {
 
     <div class="detail-section">
       <div class="detail-label">Key Signals</div>
-      ${(a.key_signals || []).map(s => `<div class="signal-item">${escape(s)}</div>`).join('')}
+      ${otherSignals.map(s => `<div class="signal-item">${escape(s)}</div>`).join('')}
     </div>
 
     <div class="detail-section">
