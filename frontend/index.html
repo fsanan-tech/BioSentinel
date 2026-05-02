@@ -45,6 +45,19 @@ body {
   display: grid;
   grid-template-rows: 48px 1fr;
   grid-template-columns: 320px 1fr 300px;
+  transition: grid-template-columns 0.25s ease;
+}
+
+body.left-collapsed {
+  grid-template-columns: 0px 1fr 300px;
+}
+
+body.right-collapsed {
+  grid-template-columns: 320px 1fr 0px;
+}
+
+body.both-collapsed {
+  grid-template-columns: 0px 1fr 0px;
   font-family: var(--font-ui);
   color: var(--text-primary);
 }
@@ -156,7 +169,71 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: all 0.25s ease;
+  min-width: 0;
 }
+
+.collapse-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.collapse-btn:hover {
+  color: var(--cyan);
+  background: rgba(0,188,188,0.08);
+}
+
+/* Map expand button — shows when a panel is collapsed */
+.map-expand-btn {
+  position: absolute;
+  z-index: 600;
+  background: var(--bg-card);
+  border: 1px solid var(--border-mid);
+  color: var(--cyan);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+
+.map-expand-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-hot);
+}
+
+#expand-left {
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+}
+
+#expand-right {
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+}
+
+body.left-collapsed #expand-left { display: block; }
+body.right-collapsed #expand-right { display: block; }
+body.both-collapsed #expand-left { display: block; }
+body.both-collapsed #expand-right { display: block; }
 
 .panel-header {
   padding: 12px 16px 10px;
@@ -388,6 +465,8 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: all 0.25s ease;
+  min-width: 0;
 }
 
 #detail-view {
@@ -789,6 +868,7 @@ body::after {
   <div class="panel-header">
     <span class="panel-title">Intelligence Assessments</span>
     <span class="panel-count" id="assessment-count">0 active</span>
+    <button class="collapse-btn" onclick="togglePanel('left')" title="Collapse panel">◀</button>
   </div>
   <div class="filter-row">
     <button class="filter-btn active" onclick="filterRisk('all', this)">ALL</button>
@@ -809,6 +889,9 @@ body::after {
       <line x1="0" y1="60" x2="120" y2="60" stroke="rgba(0,188,188,0.3)" stroke-width="0.5"/>
     </svg>
   </div>
+  <!-- Expand buttons shown when panels are collapsed -->
+  <button id="expand-left" class="map-expand-btn" onclick="togglePanel('left')">◀ LIST</button>
+  <button id="expand-right" class="map-expand-btn" onclick="togglePanel('right')">DETAIL ▶</button>
   <div class="map-overlay">
     <button class="map-btn" onclick="refreshData()">⟳ REFRESH</button>
     <button class="map-btn" onclick="triggerIngest()">▶ INGEST</button>
@@ -818,6 +901,7 @@ body::after {
 <!-- Right Panel: Detail View -->
 <aside id="right-panel">
   <div class="panel-header">
+    <button class="collapse-btn" onclick="togglePanel('right')" title="Collapse panel">▶</button>
     <span class="panel-title">Assessment Detail</span>
   </div>
   <div id="detail-view">
@@ -1195,6 +1279,30 @@ function formatDate(d) {
   try {
     return new Date(d).toISOString().substring(0,16).replace('T',' ') + 'Z';
   } catch { return '—'; }
+}
+
+// ── Panel collapse/expand ─────────────────────
+const panelState = { left: true, right: true };
+
+function togglePanel(side) {
+  panelState[side] = !panelState[side];
+
+  const body = document.body;
+  const leftCollapsed = !panelState.left;
+  const rightCollapsed = !panelState.right;
+
+  body.classList.toggle('left-collapsed', leftCollapsed);
+  body.classList.toggle('right-collapsed', rightCollapsed);
+  body.classList.toggle('both-collapsed', leftCollapsed && rightCollapsed);
+
+  // Update collapse button arrows
+  const leftBtn = document.querySelector('#left-panel .collapse-btn');
+  const rightBtn = document.querySelector('#right-panel .collapse-btn');
+  if (leftBtn) leftBtn.textContent = leftCollapsed ? '▶' : '◀';
+  if (rightBtn) rightBtn.textContent = rightCollapsed ? '◀' : '▶';
+
+  // Invalidate Leaflet map size after transition
+  setTimeout(() => map.invalidateSize(), 280);
 }
 
 async function init() {
