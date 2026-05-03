@@ -911,7 +911,10 @@ body::after {
     </div>
   </div>
   <div id="ingest-panel">
-    <div class="panel-title" style="margin-bottom:10px">Source Status</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:pointer" onclick="toggleSourceStatus()">
+      <div class="panel-title">Source Status</div>
+      <button id="source-status-btn" style="background:transparent;border:none;color:var(--text-dim);font-size:12px;cursor:pointer;padding:0 4px;line-height:1">▾</button>
+    </div>
     <div id="source-status-list"></div>
   </div>
 </aside>
@@ -1279,6 +1282,16 @@ function formatDate(d) {
   try {
     return new Date(d).toISOString().substring(0,16).replace('T',' ') + 'Z';
   } catch { return '—'; }
+}
+
+// ── Source Status collapse ────────────────────
+let sourceStatusOpen = true;
+function toggleSourceStatus() {
+  sourceStatusOpen = !sourceStatusOpen;
+  const list = document.getElementById('source-status-list');
+  const btn = document.getElementById('source-status-btn');
+  list.style.display = sourceStatusOpen ? '' : 'none';
+  btn.textContent = sourceStatusOpen ? '▾' : '▸';
 }
 
 // ── Panel collapse/expand ─────────────────────
